@@ -2,6 +2,9 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_image.h"
+#include "mathematics.h"
 
 static void error_callback(int error, const char* description)
 {
@@ -22,21 +25,33 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 /* Vertex shader source code */
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
+	"layout (location = 1) in vec3 aColor; // the color variable has attribute position 1\n"
+	"layout (location = 2) in vec2 aTexCoord;\n"
+	"out vec3 ourColor; // specify a color output to the fragment shader\n"
+	"out vec2 TexCoord;\n"
+	"uniform mat4 transform;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   gl_Position = transform * vec4(aPos, 1.0);\n"
+	"	ourColor = aColor; // set the output variable to a dark-red color\n"
+	"	TexCoord = aTexCoord;\n"
     "}\0";
 /* Fragment shader source code */
 const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
+	"in vec3 ourColor; // we set this variable in the OpenGL code.\n"
+	"in vec2 TexCoord;\n"
+	"uniform sampler2D ourTexture;\n"
     "void main()\n"
     "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "   FragColor = texture(ourTexture, TexCoord) * vec4(ourColor, 1.0);\n"
     "}\n\0";
 
 int main(void)
 {
     GLFWwindow* window;
+
+	IMG_Init(IMG_INIT_PNG);
 
 	glfwSetErrorCallback(error_callback);
 
@@ -50,7 +65,7 @@ int main(void)
 
 	
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(800, 600, "scoop 1337", NULL, NULL);
+    window = glfwCreateWindow(600, 600, "scoop 1337", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -100,26 +115,17 @@ int main(void)
     // ------------------------------------------------------------------
     /* Vertices coordinates */
 	GLfloat vertices[] = {
-        -0.5f, -0.5f, 0.0f, // left_down  
-         0.5f, -0.5f, 0.0f, // right_down
-         0.0f,  0.5f, 0.0f,  // top 
-		 -0.5f/2, 0.0f, 0.0f, // middel_left
-		 0.5f/2, 0.0f, 0.0f, // middel_right
-		 0.0f, -0.5f, 0.0f // down_middel
-		 
+        // positions         // colors			//texture
+    	 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f, // bottom right
+    	-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f, // bottom left
+    	 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.5f, 1.0f // top 
     }; 
 
-	GLuint indices[] = {
-		0, 3, 5,
-		3, 2, 4,
-		5, 4, 1
-	};
 	/* create reference containers for the vertex array object and the vertex buffer object */
-    GLuint VBO, VAO, EBO;
+    GLuint VBO, VAO;
     /* generate the VAO and VBO with 1 object each */
 	glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
     // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     /* Make the VAO the current vertex array object by binding it */
 	glBindVertexArray(VAO);
@@ -129,27 +135,54 @@ int main(void)
 	/* Introduce the vertices into the VBO */
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
 	/* Configure the vertex attribute so that openGL knows how to read the VBO */
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     /* Enable the vertex attribute so that openGL kwows to use it */
 	glEnableVertexAttribArray(0);
 
+	// color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3* sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// texture coord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+    // glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
+    // glBindVertexArray(0); 
 	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	// specify color of background
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 	// swap the back buffer witf the front buffer
 	glfwSwapBuffers(window);
+
+	GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+	SDL_Surface *img = IMG_Load("wall.jpg");
+	
+    if (img)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->w, img->h, 0, GL_RGB, GL_UNSIGNED_BYTE, img->pixels);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    	exit(EXIT_FAILURE);
+
+    SDL_FreeSurface(img);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -159,9 +192,32 @@ int main(void)
 
 		// draw our first triangle
         glUseProgram(shaderProgram);
+
+		// update the uniform color
+    	// float timeValue = glfwGetTime();
+    	// float greenValue = sin(timeValue) / 2.0f + 0.5f;
+    	// int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+    	// glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+		// bind Texture
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+		// create transformations
+        t_mat4 transform = create_mat4(1.0f);// make sure to initialize matrix to identity matrix first
+		t_vec3 new_pos = (t_vec3){0.5f, -0.5f, 0.0f};
+		t_mat4 trans = make_translation(&new_pos);
+		transform = m4_x_m4(&transform, &trans);
+		t_mat4 rotate_z = create_mat4(1.0f);
+		rotate_z = make_rot_z((float)glfwGetTime()*50);
+		transform = m4_x_m4(&transform, &rotate_z);
+        // get matrix's uniform location and set matrix
+        unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_TRUE, &transform.m[0][0]);
+
+
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -173,7 +229,6 @@ int main(void)
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
 
     glfwTerminate();
