@@ -32,4 +32,13 @@ t_mat4		matrix_scale(float value);
 t_mat4		make_rot_x(float degree);
 t_mat4		make_rot_y(float degree);
 t_mat4		make_rot_z(float degree);
+t_mat4		perspective(float fov, float aspect, float near, float far);
+float		magnitude(t_vec3 a);
+t_vec3		normalize(t_vec3 a);
+t_vec3		v_v_subs(t_vec3 a, t_vec3 b);
+t_vec3		v_v_add(t_vec3 a, t_vec3 b);
+t_vec3		v_v_mult(t_vec3 a, t_vec3 b);
+t_vec3		v_v_cross(t_vec3 a, t_vec3 b);
+t_vec3		v_scal_mult(t_vec3 a, float v);
+t_mat4		look_at(t_vec3 r, t_vec3 u, t_vec3 d, t_vec3 p);
 #endif
