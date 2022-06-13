@@ -59,11 +59,11 @@
 // 	//  0.75f, 0.0f, -0.5f
 // };
 
-GLuint indices[] = {
-	0, 1, 3,
-	1, 2, 3
-	// 1, 4, 2, 3
-};
+// GLuint indices[] = {
+// 	0, 1, 3,
+// 	1, 2, 3
+// 	// 1, 4, 2, 3
+// };
 
 void	build_compile_shader(t_scopenv *env)
 {
@@ -173,7 +173,7 @@ void	generate_vao_vbo_ebo(t_scopenv *env)
     glBufferData(GL_ARRAY_BUFFER, sizeof(env->vertices) * env->num_vertices * 3, env->vertices, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, env->ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(env->indices) * env->num_indices * 3, env->indices, GL_STATIC_DRAW);
 	/* Configure the vertex attribute so that openGL knows how to read the VBO */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 

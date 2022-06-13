@@ -74,7 +74,7 @@ typedef struct	s_scopenv
 	float			current_frame;
 	GLfloat			*vertices;
 	int				num_vertices;
-	t_vec3			*indices;
+	GLint			*indices;
 	int				num_indices;
 	int				fd;
 	int				num_lines;

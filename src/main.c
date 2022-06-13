@@ -23,7 +23,7 @@ int main(int ac, char **av)
 	
 	init_parcing(&env);
 	model_parcing(&env, ac, av);
-	int d = 0;
+	// int d = 0;
 	// while (d < 12)
 	// {
 	// 	printf("%f ", env.vertices[d]);
@@ -91,7 +91,6 @@ int main(int ac, char **av)
 
 	//hide the cursor and capture it 
 	//glfwSetInputMode(env.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(env.window))
     {
@@ -130,23 +129,26 @@ int main(int ac, char **av)
         // get matrix's uniform location and set matrix
 		// env.model_loc = glGetUniformLocation(env.shaderProgram, "model");
         // glUniformMatrix4fv(env.model_loc, 1, GL_TRUE, &env.model.m[0][0]);
-        glBindVertexArray(env.vao); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 		for (unsigned int i = 0; i < 1; i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
 			env.model = create_mat4(1.0f);// make sure to initialize matrix to identity matrix first
 			env.trans = make_translation(&cubePositions[i]);
 			env.model = m4_x_m4(&env.model, &env.trans);
-			env.rotate_y = make_rot_y((float)glfwGetTime() * 20.0f * (i+3));
+			env.rotate_y = make_rot_y((float)glfwGetTime() * 20.0f * (i+2));
+			env.rotate_x = make_rot_x((float)glfwGetTime() * 20.0f * (i+2));
+			env.rotate_z = make_rot_z((float)glfwGetTime() * 20.0f * (i+2));
 			env.model = m4_x_m4(&env.model, &env.rotate_y);
+			env.model = m4_x_m4(&env.model, &env.rotate_x);
+			env.model = m4_x_m4(&env.model, &env.rotate_z);
 			env.model_loc = glGetUniformLocation(env.shaderProgram, "model");
         	glUniformMatrix4fv(env.model_loc, 1, GL_TRUE, &env.model.m[0][0]);
 
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             // glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glBindVertexArray(env.vao); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+		glDrawElements(GL_TRIANGLES, env.num_indices * 3, GL_UNSIGNED_INT, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		//render boxs
 		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
