@@ -1,46 +1,60 @@
-NAME = scop
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: bano <bano@student.42.fr>                  +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2017/06/17 16:13:57 by notraore          #+#    #+#              #
+#    Updated: 2019/03/13 15:43:12 by bano             ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
 
-CC = gcc
+NAME		= 	scop
+LIBFT 		= 	libft/libft.a
+FRMWLIB		= 	lib/libglfw.3.3.dylib
+GLADLIB		=	glad/libglad.a
 
-LIBFT = libft
+SRCS		= 	main.c \
+				shader.c \
+				events_keyboard.c \
+				init.c \
+				mathematics.c \
+				parcing.c \
 
-SOURCES = main.c mathematics.c glad.c parcing.c shader.c init.c events_keyboard.c
+OBJS		= 	$(patsubst srcs/%.c,objs/%.o,$(SRCS))
 
-FLAGS = -lglfw -lGLU -lGL -lXrandr -lXxf86vm -lXi -lXinerama -lX11 -lrt -ldl `sdl2-config --cflags --libs` -lSDL2_image -lm
+CC			= 	gcc
+CFLAGS		= 	-Wall -Wextra -Werror
+FRMPATH		=	-I./include/GLFW/
+GLADPATH	=	-I./glad/
+FRMWK		=	-framework OpenGl 
 
-DIR_S = src
+CG = \033[92m
+CY = \033[93m
+CE = \033[0m
 
-DIR_O = obj
+all:		$(NAME)
 
-HEADER = include
+$(NAME):	$(OBJS)
+			@ make -C ./libft all
+			@ $(CC) $(LIBFT) $(CFLAGS) $(GLADPATH) $(FRMPATH) $(SCOPINC) $(FRMWLIB) $(GLADLIB) $(FRMWK) -o $@ $^
+			@ echo "\n\033[92m---> scop program created ✓\033[0m";
 
-_DEPS = scop.h mathematics.h
+objs/%.o:	srcs/%.c
+			@ mkdir -p objs
+		 	@ $(CC) -c $< -o $@
+		 	@ echo "\033[K$(CY)[RT] :$(CE) $(CG)Compiling $<$(CE) \033[1A";
 
-DEPS = $(patsubst %,$(HEADER)/%,$(_DEPS))
+clean:		
+			@ make -C libft/ clean
+			@ /bin/rm -rf objs/
+			@ echo "\033[1;33m---> All .o files cleared\033[0m \033[92m✓\033[0m";
 
-SRCS = $(addprefix $(DIR_S)/,$(SOURCES))
+fclean:		clean
+			@ /bin/rm -f $(NAME)
+			@ make -C libft/ fclean
+			@ echo "\n\033[1;33m---> Everything cleared\033[2;00m \033[92m✓\033[0m";
+re : fclean all
 
-OBJS = $(addprefix $(DIR_O)/,$(SOURCES:.c=.o))
-
-all : obj $(NAME)
-
-$(NAME): $(OBJS)
-	make -C $(LIBFT)
-	$(CC) -o $(NAME) $(OBJS) $(FLAGS)  libft/libft.a $(FLAGS)
-
-obj:
-	mkdir -p obj
-
-$(DIR_O)/%.o: $(DIR_S)/%.c $(DEPS)
-	$(CC) -c -o $@ $< $(FLAGS)
-
-clean:
-		rm -f $(OBJS)
-		make clean -C $(LIBFT)
-		rm -rf $(DIR_O)
-
-fclean: clean
-		rm -f $(NAME)
-		make fclean -C $(LIBFT)
-
-re: fclean all
+.PHONY: all, clean, fclean, re
